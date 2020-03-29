@@ -1,4 +1,6 @@
-const _ = require("lodash");
+import { randomNormal, randomUniform } from "d3";
+
+
 const warning_dates = [13,14];
 const closed_dates = [15,16];
 const sim_length = 30;
@@ -21,14 +23,25 @@ let date = 0;
 // The number of members in particular is nowhere near a natural distribution
 // The other numbers might be improved by some buying habit information, but random
 // is good enough for now.
+const rollsRandom = randomUniform(2,32);
+const purchaseRandom = randomNormal(8,1);
+const folksRandom = randomNormal(4,1);
+
 for(let i = 0; i < community_size; i++) {
-  households.push({
-    rolls: 4 * getRandomInt(8),
-    purchase: 4 * getRandomInt(8),
-    threshold: getRandomInt(4) + 1,
-    members: getRandomInt(8)
-  });
+  const rolls = Math.round(rollsRandom())
+  const purchase = 4 * Math.round(purchaseRandom())
+  const threshold = Math.ceil(purchase * .1)
+  const members = Math.round(folksRandom());
+  const th = {
+    rolls,
+    purchase,
+    threshold,
+    members
+  }
+  households.push(th)
 }
+
+console.log(households);
 
 // Other logic currently assumes these dates are consecutive
 
@@ -114,12 +127,12 @@ function runDay() {
 
   const trips_today = {
     visits: 0,
-    rolls: 0
+    rolls: 0,
+    store_state: closing
   }
   
   const today = households.map(hh => {
     const thh = {...hh};
-    //console.log(thh)
     thh.rolls -= willUse(thh);
     if(thh.rolls < 0) {
       thh.rolls = 0
@@ -136,9 +149,12 @@ function runDay() {
   households = today;
   sim_days.push(today);
   grocery_trips.push(trips_today);
-  console.log(sim_days.length,trips_today.visits, trips_today.rolls,closing);
+  //console.log(sim_days.length,trips_today.visits, trips_today.rolls,closing);
 }
 
-while (sim_days.length < sim_length) {
-  runDay();
+export default function() {
+  while (sim_days.length < sim_length) {
+    runDay();
+  } 
+  return { sim_days, grocery_trips }
 }
